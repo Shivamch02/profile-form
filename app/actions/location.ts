@@ -1,6 +1,5 @@
 "use server";
 
-// Mock data - In a real app, this would come from your database
 const mockLocationData = {
   countries: [
     { id: "us", name: "United States" },
