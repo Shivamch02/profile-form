@@ -1,116 +1,135 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useRef } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Upload, User, Check, X } from "lucide-react"
-import type { FormData, FormErrors } from "../profile-update-form"
-import { checkUsernameAvailability } from "@/app/actions/validation"
+import { useState, useRef } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Upload, User, Check, X } from "lucide-react";
+import type { FormData, FormErrors } from "../profile-update-form";
+import { checkUsernameAvailability } from "@/app/actions/validation";
 
 interface PersonalInfoStepProps {
-  formData: FormData
-  errors: FormErrors
-  updateFormData: (field: keyof FormData, value: any) => void
-  setErrors: (errors: FormErrors | ((prev: FormErrors) => FormErrors)) => void
+  formData: FormData;
+  errors: FormErrors;
+  updateFormData: (field: keyof FormData, value: any) => void;
+  setErrors: (errors: FormErrors | ((prev: FormErrors) => FormErrors)) => void;
 }
 
-export function PersonalInfoStep({ formData, errors, updateFormData, setErrors }: PersonalInfoStepProps) {
-  const [previewUrl, setPreviewUrl] = useState<string>("")
-  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken">("idle")
-  const [passwordStrength, setPasswordStrength] = useState(0)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const usernameTimeoutRef = useRef<NodeJS.Timeout>()
+export function PersonalInfoStep({
+  formData,
+  errors,
+  updateFormData,
+  setErrors,
+}: PersonalInfoStepProps) {
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [usernameStatus, setUsernameStatus] = useState<
+    "idle" | "checking" | "available" | "taken"
+  >("idle");
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const usernameTimeoutRef = useRef<NodeJS.Timeout>();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
     // Validate file type
     if (!["image/jpeg", "image/png"].includes(file.type)) {
-      setErrors((prev) => ({ ...prev, profilePhoto: "Only JPG and PNG files are allowed" }))
-      return
+      setErrors((prev) => ({
+        ...prev,
+        profilePhoto: "Only JPG and PNG files are allowed",
+      }));
+      return;
     }
 
     // Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, profilePhoto: "File size must be less than 2MB" }))
-      return
+      setErrors((prev) => ({
+        ...prev,
+        profilePhoto: "File size must be less than 2MB",
+      }));
+      return;
     }
 
-    updateFormData("profilePhoto", file)
+    updateFormData("profilePhoto", file);
 
     // Create preview
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
+      setPreviewUrl(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const checkUsername = async (username: string) => {
-    if (username.length < 4) return
+    if (username.length < 4) return;
 
-    setUsernameStatus("checking")
+    setUsernameStatus("checking");
     try {
-      const result = await checkUsernameAvailability(username)
-      setUsernameStatus(result.available ? "available" : "taken")
+      const result = await checkUsernameAvailability(username);
+      setUsernameStatus(result.available ? "available" : "taken");
       if (!result.available) {
-        setErrors((prev) => ({ ...prev, username: "Username is already taken" }))
+        setErrors((prev) => ({
+          ...prev,
+          username: "Username is already taken",
+        }));
       }
     } catch (error) {
-      setUsernameStatus("idle")
+      setUsernameStatus("idle");
     }
-  }
+  };
 
   const handleUsernameChange = (value: string) => {
-    updateFormData("username", value)
-    setUsernameStatus("idle")
+    updateFormData("username", value);
+    setUsernameStatus("idle");
+
+    // Clear username error when user types
+    setErrors((prev) => ({ ...prev, username: undefined }));
 
     // Clear existing timeout
     if (usernameTimeoutRef.current) {
-      clearTimeout(usernameTimeoutRef.current)
+      clearTimeout(usernameTimeoutRef.current);
     }
 
     // Set new timeout for username check
     if (value.length >= 4) {
       usernameTimeoutRef.current = setTimeout(() => {
-        checkUsername(value)
-      }, 500)
+        checkUsername(value);
+      }, 500);
     }
-  }
+  };
 
   const calculatePasswordStrength = (password: string) => {
-    let strength = 0
-    if (password.length >= 8) strength += 25
-    if (/[a-z]/.test(password)) strength += 25
-    if (/[A-Z]/.test(password)) strength += 25
-    if (/[0-9]/.test(password)) strength += 12.5
-    if (/[!@#$%^&*]/.test(password)) strength += 12.5
-    return Math.min(strength, 100)
-  }
+    let strength = 0;
+    if (password.length >= 8) strength += 25;
+    if (/[a-z]/.test(password)) strength += 25;
+    if (/[A-Z]/.test(password)) strength += 25;
+    if (/[0-9]/.test(password)) strength += 12.5;
+    if (/[!@#$%^&*]/.test(password)) strength += 12.5;
+    return Math.min(strength, 100);
+  };
 
   const handlePasswordChange = (value: string) => {
-    updateFormData("newPassword", value)
-    setPasswordStrength(calculatePasswordStrength(value))
-  }
+    updateFormData("newPassword", value);
+    setPasswordStrength(calculatePasswordStrength(value));
+  };
 
   const getPasswordStrengthColor = () => {
-    if (passwordStrength < 25) return "bg-red-500"
-    if (passwordStrength < 50) return "bg-orange-500"
-    if (passwordStrength < 75) return "bg-yellow-500"
-    return "bg-green-500"
-  }
+    if (passwordStrength < 25) return "bg-red-500";
+    if (passwordStrength < 50) return "bg-orange-500";
+    if (passwordStrength < 75) return "bg-yellow-500";
+    return "bg-green-500";
+  };
 
   const getPasswordStrengthText = () => {
-    if (passwordStrength < 25) return "Weak"
-    if (passwordStrength < 50) return "Fair"
-    if (passwordStrength < 75) return "Good"
-    return "Strong"
-  }
+    if (passwordStrength < 25) return "Weak";
+    if (passwordStrength < 50) return "Fair";
+    if (passwordStrength < 75) return "Good";
+    return "Strong";
+  };
 
   return (
     <div className="space-y-6">
@@ -136,7 +155,9 @@ export function PersonalInfoStep({ formData, errors, updateFormData, setErrors }
               <Upload className="w-4 h-4" />
               <span>Upload Photo</span>
             </Button>
-            <p className="text-xs text-muted-foreground mt-1">JPG or PNG, max 2MB</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              JPG or PNG, max 2MB
+            </p>
           </div>
         </div>
         <input
@@ -146,7 +167,9 @@ export function PersonalInfoStep({ formData, errors, updateFormData, setErrors }
           onChange={handleFileChange}
           className="hidden"
         />
-        {errors.profilePhoto && <p className="text-sm text-red-500">{errors.profilePhoto}</p>}
+        {errors.profilePhoto && (
+          <p className="text-sm text-red-500">{errors.profilePhoto}</p>
+        )}
       </div>
 
       {/* Username */}
@@ -164,12 +187,20 @@ export function PersonalInfoStep({ formData, errors, updateFormData, setErrors }
             {usernameStatus === "checking" && (
               <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             )}
-            {usernameStatus === "available" && <Check className="w-4 h-4 text-green-500" />}
-            {usernameStatus === "taken" && <X className="w-4 h-4 text-red-500" />}
+            {usernameStatus === "available" && (
+              <Check className="w-4 h-4 text-green-500" />
+            )}
+            {usernameStatus === "taken" && (
+              <X className="w-4 h-4 text-red-500" />
+            )}
           </div>
         </div>
-        {errors.username && <p className="text-sm text-red-500">{errors.username}</p>}
-        {usernameStatus === "available" && <p className="text-sm text-green-500">Username is available!</p>}
+        {errors.username && (
+          <p className="text-sm text-red-500">{errors.username}</p>
+        )}
+        {usernameStatus === "available" && (
+          <p className="text-sm text-green-500">Username is available!</p>
+        )}
       </div>
 
       {/* Current Password */}
@@ -183,7 +214,9 @@ export function PersonalInfoStep({ formData, errors, updateFormData, setErrors }
           placeholder="Required only if changing password"
           className={errors.currentPassword ? "border-red-500" : ""}
         />
-        {errors.currentPassword && <p className="text-sm text-red-500">{errors.currentPassword}</p>}
+        {errors.currentPassword && (
+          <p className="text-sm text-red-500">{errors.currentPassword}</p>
+        )}
       </div>
 
       {/* New Password */}
@@ -211,8 +244,10 @@ export function PersonalInfoStep({ formData, errors, updateFormData, setErrors }
             </div>
           </div>
         )}
-        {errors.newPassword && <p className="text-sm text-red-500">{errors.newPassword}</p>}
+        {errors.newPassword && (
+          <p className="text-sm text-red-500">{errors.newPassword}</p>
+        )}
       </div>
     </div>
-  )
+  );
 }
