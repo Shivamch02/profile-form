@@ -53,7 +53,6 @@ A full-stack Next.js application for updating user profiles with a multi-step fo
 
 ### Prerequisites
 
-- Node.js (18+ recommended)
 - [pnpm](https://pnpm.io/) or npm/yarn
 - MongoDB instance (local or cloud)
 
